@@ -48,6 +48,9 @@ footer a{color:#888}
 button{padding:9px 14px;font-size:15px;border:1px solid #1f7a3d;background:#1f7a3d;color:#fff;border-radius:6px;cursor:pointer}
 button:active{opacity:.8}
 .changed{margin:8px 0 0;font-size:14px;color:#1f7a3d;font-weight:600}
+.changed.rm{color:#b00}
+.item.del h3{text-decoration:line-through;color:#999}
+.item.del .pic{opacity:.45}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;gap:10px;
       padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #ddd;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
 .bar span{flex:1;font-size:14px}
@@ -70,7 +73,7 @@ footer{padding:20px 14px;color:#888;font-size:12px}
   <h1>Меню My Soul — сверка цен</h1>
   <p class="sub">Шеф My Soul · +79180435700 · 97 позиций · выгружено 20.08.2026</p>
   <div class="howto"><b>Как проверить</b>
-  Пролистайте меню. Если цена верная — ничего не трогайте. Если нет — впишите правильную в поле рядом и нажмите «Обновить».</div>
+  Пролистайте меню. Если цена верная — ничего не трогайте. Если нет — впишите правильную в поле рядом и нажмите «Обновить». Если позицию нужно убрать, поставьте ноль и нажмите «Обновить».</div>
 </header>
 <nav id="nav"><a href="#sec0" data-sec="sec0">Сеты<i>8</i></a><a href="#sec1" data-sec="sec1">Холодные роллы<i>28</i></a><a href="#sec2" data-sec="sec2">Запечённые и тёплые роллы<i>15</i></a><a href="#sec3" data-sec="sec3">Хот-дог роллы<i>3</i></a><a href="#sec4" data-sec="sec4">Суши и гунканы<i>9</i></a><a href="#sec5" data-sec="sec5">Японская пицца и сендвич<i>4</i></a><a href="#sec6" data-sec="sec6">WOK: лапша и рис<i>10</i></a><a href="#sec7" data-sec="sec7">Закуски и морепродукты<i>11</i></a><a href="#sec8" data-sec="sec8">Снеки и гарниры<i>4</i></a><a href="#sec9" data-sec="sec9">Десерты<i>5</i></a></nav>
 <main>
@@ -218,12 +221,23 @@ let changes=(()=>{try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){
 function paint(art){
   const msg=art.querySelector('.changed'), name=art.dataset.name;
   if(name in changes){
+    const v=changes[name], del=(v===0);
     art.classList.add('upd');
-    msg.hidden=false; msg.textContent='Новая цена: '+changes[name]+' ₽';
-    art.querySelector('input').value=changes[name];
-  } else { art.classList.remove('upd'); msg.hidden=true; msg.textContent=''; }
+    art.classList.toggle('del',del);
+    msg.hidden=false;
+    msg.classList.toggle('rm',del);
+    msg.textContent=del?'Позицию убрать из меню':'Новая цена: '+v+' ₽';
+    art.querySelector('input').value=v;
+  } else {
+    art.classList.remove('upd','del');
+    msg.hidden=true; msg.textContent=''; msg.classList.remove('rm');
+  }
 }
-const stat=()=>document.getElementById('stat').textContent='Изменено цен: '+Object.keys(changes).length;
+const stat=()=>{
+  const k=Object.keys(changes), rm=k.filter(n=>changes[n]===0).length;
+  document.getElementById('stat').textContent =
+    'Изменено цен: '+(k.length-rm) + (rm?' · убрать: '+rm:'');
+};
 let savedTimer;
 function flashSaved(){
   const el=document.getElementById('saved');
@@ -284,7 +298,9 @@ function report(){
   if(!keys.length) return 'Цены проверены, изменений нет.';
   const lines=keys.map(k=>{
     const art=document.querySelector('.item[data-name="'+CSS.escape(k)+'"]');
-    return '• '+k+': '+(art?art.dataset.old:'?')+' → '+changes[k]+' ₽';
+    const old=art?art.dataset.old:'?';
+    return changes[k]===0 ? '• '+k+': УБРАТЬ из меню (было '+old+' ₽)'
+                          : '• '+k+': '+old+' → '+changes[k]+' ₽';
   });
   return 'Правки цен My Soul ('+keys.length+'):\n'+lines.join('\n')+'\n\n---DATA---\n'+JSON.stringify(changes);
 }
