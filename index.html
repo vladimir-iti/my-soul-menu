@@ -252,7 +252,8 @@ const pick=()=>{
   if(cur) mark(cur.id);
   document.getElementById('up').classList.toggle('show', scrollY>800);
 };
-addEventListener('scroll',()=>{ cancelAnimationFrame(pick._t); pick._t=requestAnimationFrame(pick); },{passive:true});
+addEventListener('scroll',pick,{passive:true});
+addEventListener('resize',pick,{passive:true});
 pick();
 document.getElementById('up').addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
 
